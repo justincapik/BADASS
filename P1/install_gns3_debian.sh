@@ -4,3 +4,8 @@ pipx install gns3-server
 pipx install gns3-gui
 pipx inject gns3-gui gns3-server PyQt5
 
+#setup gns3-server api (disable http://localhost:3080 authentification)
+sed -i 's/^auth = True/auth = False/' "$(echo $HOME)/.config/GNS3/2.2/gns3_server.conf"
+
+echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.zshrc
+echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
