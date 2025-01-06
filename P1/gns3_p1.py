@@ -1,105 +1,100 @@
 import requests
-import telnetlib
 import time
 
 # GNS3 Server details
 gns3_server = "http://localhost:3080"
+username = "admin"  # Replace with your GNS3 username
+password = "admin"  # Replace with your GNS3 password
 
-def create_object(option, json):
+def get_access_token():
+    auth_url = f"{gns3_server}/v2/access/users/authenticate"
+    auth_data = {
+        "username": username,
+        "password": password
+    }
+    response = requests.post(auth_url, json=auth_data)
+    if response.status_code == 200:
+        return response.json().get("access_token")
+    else:
+        print("Authentication failed:", response.text)
+        return None
 
-    # Make API request to create Docker VM template
-    response = requests.post(f"{gns3_server}/v2/{option}", json=json)
-
+def create_object(option, json, headers):
+    response = requests.post(f"{gns3_server}/v2/{option}", json=json, headers=headers)
     if response.status_code == 201:
         print(f"{option} added successfully!")
     else:
-        print(f"Failed to add {option} request:", response.text)
+        print(f"Failed to add {option}:", response.text)
 
-def get_id(option, name, id_name):
-
-    # Make API request to create Docker VM template
-    response = requests.get(f"{gns3_server}/v2/{option}")
-
+def get_id(option, name, id_name, headers):
+    response = requests.get(f"{gns3_server}/v2/{option}", headers=headers)
     if response.status_code == 200:
-        projects = response.json()
-        for project in projects:
-            if project["name"] == name:  # Look for project named "P1"
-                id = project[id_name]
+        items = response.json()
+        for item in items:
+            if item["name"] == name:
+                id = item[id_name]
                 print(f"{option} ID for '{name}': {id}")
                 return id
-        else:
-            print(f"{option} '{name}' not found.")
+        print(f"{option} '{name}' not found.")
     else:
-        print(f"Failed to retrieve {option}: {response.text}")
-        if response.status_code == 201:
-            print(f"{option} added successfully!")
-        else:
-            print(f"Failed to add {option} request:", response.text)
+        print(f"Failed to retrieve {option}:", response.text)
 
-def add_template_node(name, project_id, template_id, x=50, y=50):
-    
-    # Add the node
+def add_template_node(name, project_id, template_id, headers, x=50, y=50):
     node_data = {
         "name": name,
-        "x" : x,
-        "y" : y,
+        "x": x,
+        "y": y,
     }
-    response = requests.post(f"{gns3_server}/v2/projects/{project_id}/templates/{template_id}", json=node_data)
-
+    response = requests.post(f"{gns3_server}/v2/projects/{project_id}/templates/{template_id}", json=node_data, headers=headers)
     if response.status_code == 201:
         print("Template node added successfully!")
     else:
         print("Failed to add node:", response.text)
 
-def open_project(project_id):
-    # Open the project
-    response = requests.post(f"{gns3_server}/v2/projects/{project_id}/open")
-
+def open_project(project_id, headers):
+    response = requests.post(f"{gns3_server}/v2/projects/{project_id}/open", headers=headers)
     if response.status_code == 200:
         print("Project opened successfully!")
-    # else:
-    #     print("Failed to open project:", response.json())
+    else:
+        print("Failed to open project:", response.text)
 
-def start_node(project_id, node_id):
-    start_response = requests.post(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}/start", json={})
-
-    if start_response.status_code == 200: 
+def start_node(project_id, node_id, headers):
+    response = requests.post(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}/start", headers=headers)
+    if response.status_code == 200:
         print("Node started successfully!")
     else:
-        print("Failed to start node:", start_response.text)
+        print("Failed to start node:", response.text)
 
-def check_node_status(project_id, node_id):
-    
-    status_response = requests.get(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}")
-
-    if status_response.status_code == 200:
-        node_status = status_response.json()["status"]
+def check_node_status(project_id, node_id, headers):
+    response = requests.get(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}", headers=headers)
+    if response.status_code == 200:
+        node_status = response.json().get("status")
         print(f"Node status: {node_status}")
     else:
-        print("Failed to retrieve node status:", status_response.text)
+        print("Failed to retrieve node status:", response.text)
 
-def change_symbol(project_id, node_id, symbol):
-
-    symbol = {
+def change_symbol(project_id, node_id, symbol, headers):
+    symbol_data = {
         "symbol": f"/symbols/{symbol}"
     }
-
-    response = requests.put(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}",
-        json=symbol)
-
-    if response.status_code == 200: 
+    response = requests.put(f"{gns3_server}/v2/projects/{project_id}/nodes/{node_id}", json=symbol_data, headers=headers)
+    if response.status_code == 200:
         print("Symbol changed successfully!")
     else:
         print("Failed to change symbol:", response.text)
 
 if __name__ == '__main__':
-
+    token = get_access_token()
+    if not token:
+        print ("Error: couldn't get token")
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
     project_name = "P1"
-    create_object("projects", {"name":project_name})
-
-    project_id = get_id("projects", project_name, "project_id")
-    open_project(project_id)
-
+    create_object("projects", {"name": project_name}, headers)
+    project_id = get_id("projects", project_name, "project_id", headers)
+    open_project(project_id, headers)
+            # Continue with the rest of your script, passing 'headers' to each function call
     #
     # Create host machine & template
     #
@@ -114,14 +109,14 @@ if __name__ == '__main__':
         "adapters": 1,  # Number of network adapters
         "console_type": "telnet"  # Console type (telnet, vnc, etc.)
     }
-    create_object("templates", docker_image)
-    template_id = get_id("templates", host_template_name, "template_id")
+    create_object("templates", docker_image, headers)
+    template_id = get_id("templates", host_template_name, "template_id", headers)
 
-    add_template_node(host_template_name, project_id, template_id)
-    node_id = get_id(f"projects/{project_id}/nodes", host_template_name, "node_id")
+    add_template_node(host_template_name, project_id, template_id, headers)
+    node_id = get_id(f"projects/{project_id}/nodes", host_template_name, "node_id", headers)
 
-    start_node(project_id, node_id)
-    check_node_status(project_id, node_id)
+    start_node(project_id, node_id, headers)
+    check_node_status(project_id, node_id, headers)
 
     #
     # Create router machine & template
@@ -138,15 +133,16 @@ if __name__ == '__main__':
         "console_type": "telnet",  # Console type (telnet, vnc, etc.)
         "symbol": "/symbols/classic/route_switch_processor.svg"
     }
-    create_object("templates", docker_image)
+    create_object("templates", docker_image, headers)
     
-    template_id = get_id("templates", router_template_name, "template_id")
-    add_template_node(router_template_name, project_id, template_id)
-    node_id = get_id(f"projects/{project_id}/nodes", router_template_name, "node_id")
+    template_id = get_id("templates", router_template_name, "template_id", headers)
+    add_template_node(router_template_name, project_id, template_id, headers)
+    node_id = get_id(f"projects/{project_id}/nodes", router_template_name, "node_id", headers)
 
-    start_node(project_id, node_id)
-    check_node_status(project_id, node_id)
+    start_node(project_id, node_id, headers)
+    check_node_status(project_id, node_id, headers)
 
+    time.sleep(3)
 
     import subprocess
 
