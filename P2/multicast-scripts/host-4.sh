@@ -1,0 +1,1 @@
+ip addr add 30.1.1.4/24 dev eth1

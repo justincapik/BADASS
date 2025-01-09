@@ -173,8 +173,7 @@ if __name__ == '__main__':
         print(f"No container found for image: {image_name}")
         return None
 
-    # Example usage
-    image_name = "frrouting/frr:latest"  # Replace with the image name you're looking for
+    image_name = "frrouting/frr:latest"  
     container_id = get_container_id_by_image(image_name)
 
     if container_id:
