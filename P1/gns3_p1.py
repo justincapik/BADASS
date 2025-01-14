@@ -1,10 +1,12 @@
 import requests
 import time
 
+import subprocess
+
 # GNS3 Server details
 gns3_server = "http://localhost:3080"
-username = "admin"  # Replace with your GNS3 username
-password = "admin"  # Replace with your GNS3 password
+username = "admin"  
+password = "admin"  
 
 def get_access_token():
     auth_url = f"{gns3_server}/v2/access/users/authenticate"
@@ -94,7 +96,7 @@ if __name__ == '__main__':
     create_object("projects", {"name": project_name}, headers)
     project_id = get_id("projects", project_name, "project_id", headers)
     open_project(project_id, headers)
-            # Continue with the rest of your script, passing 'headers' to each function call
+
     #
     # Create host machine & template
     #
@@ -103,11 +105,11 @@ if __name__ == '__main__':
     docker_image = {
         "name": host_template_name,  # Template name in GNS3
         "template_type": "docker",  # Specify Docker template type
-        "image": "alpine:latest",  # Correct field for Docker image
+        "image": "alpine:latest",  #  field for Docker image
         "category": "guest",  # Category for GNS3
-        "compute_id": "local",  # Assuming you're using local server
+        "compute_id": "local",  
         "adapters": 1,  # Number of network adapters
-        "console_type": "telnet"  # Console type (telnet, vnc, etc.)
+        "console_type": "telnet"  # Console type 
     }
     create_object("templates", docker_image, headers)
     template_id = get_id("templates", host_template_name, "template_id", headers)
@@ -128,9 +130,9 @@ if __name__ == '__main__':
         "template_type": "docker",  # Specify Docker template type
         "image": "frrouting/frr:latest",  # Correct field for Docker image
         "category": "guest",  # Category for GNS3
-        "compute_id": "local",  # Assuming you're using local server
+        "compute_id": "local",  
         "adapters": 1,  # Number of network adapters
-        "console_type": "telnet",  # Console type (telnet, vnc, etc.)
+        "console_type": "telnet",  # Console type
         "symbol": "/symbols/classic/route_switch_processor.svg"
     }
     create_object("templates", docker_image, headers)
@@ -144,7 +146,6 @@ if __name__ == '__main__':
 
     time.sleep(3)
 
-    import subprocess
 
     # Function to parse the docker ps command and get container ID by image name
     def get_container_id_by_image(image_name):
@@ -181,7 +182,6 @@ if __name__ == '__main__':
     else:
         print("No matching container found.")
 
-    # Function to run commands inside the Docker container
     def run_commands_in_container(container_id, commands):
         for command in commands:
             try:
