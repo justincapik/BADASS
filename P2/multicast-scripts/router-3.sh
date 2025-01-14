@@ -11,3 +11,5 @@ brctl addif br0 vxlan20
 ip link set dev vxlan20 up
 
 ip -d link show vxlan20
+
+bridge fdb show
